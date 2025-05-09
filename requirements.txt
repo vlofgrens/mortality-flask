@@ -1,0 +1,17 @@
+Flask>=2.0
+pandas>=1.0
+nltk
+anthropic
+openai
+python-dotenv
+requests
+google-generativeai # Consolidating google-genai and tool-utils variants
+
+# Notes:
+# - Removed duplicate entries.
+# - Kept specific versions if they were critical, otherwise allowed latest compatible.
+# - `markdown` and `bleach` are often included by Flask or other libraries;
+#   can be added back if direct use or specific versions are needed.
+# - `google-generativeai[tool-utils]` implies the base `google-generativeai` is also installed.
+#   Consolidated to just `google-generativeai` for simplicity unless tool-utils are explicitly used
+#   in a way that requires the extra. The core SDK should be sufficient for the `genai.Client` usage seen. 
