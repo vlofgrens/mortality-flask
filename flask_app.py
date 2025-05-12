@@ -20,7 +20,7 @@ from dotenv import load_dotenv
 import requests
 
 # import json # Duplicate import removed
-from google import genai
+import google.generativeai as genai
 import re  # Ensure re is imported
 import collections  # Added for Counter
 

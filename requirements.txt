@@ -6,7 +6,7 @@ anthropic
 openai
 python-dotenv
 requests
-google-generativeai # Consolidating google-genai and tool-utils variants
+google-generativeai
 gunicorn
 
 # Notes:
