@@ -699,6 +699,7 @@ def get_providers():
 
 @app.route("/api/run-scenario", methods=["POST"])
 def run_scenario():
+    app.logger.info(f"====== ENTERING /api/run-scenario ({request.method}) ======")
     app.logger.debug("-" * 40)
     app.logger.debug("Received request for /api/run-scenario")
 
@@ -942,15 +943,30 @@ def run_scenario():
             )
 
         app.logger.debug(
-            f"Successfully processed /api/run-scenario ({current_processing_version}) for provider: {provider}"
+            f"Successfully processed /api/run-scenario ({current_processing_version}) for provider: {provider}. Preparing JSON response."
         )
-        return jsonify(result)
+        # Explicitly try to jsonify the result and handle potential errors
+        try:
+            json_response = jsonify(result)
+            app.logger.debug(f"Successfully created JSON response for hash: {scenario_hash}")
+            return json_response
+        except Exception as json_err:
+            app.logger.error(f"Failed to jsonify the result for hash {scenario_hash}: {json_err}", exc_info=True)
+            # Log the problematic result structure (careful with large data)
+            try:
+                result_str_repr = repr(result)
+                if len(result_str_repr) > 1000:
+                    result_str_repr = result_str_repr[:500] + "...(truncated)..." + result_str_repr[-500:]
+                app.logger.error(f"Problematic result data (repr): {result_str_repr}")
+            except Exception as repr_err:
+                app.logger.error(f"Could not even get representation of result data: {repr_err}")
+            # Return a guaranteed valid JSON error response
+            return jsonify({"error": "Internal server error during JSON serialization"}), 500
 
     except Exception as e:
         app.logger.error(
             f"Unhandled exception in /api/run-scenario: {e}", exc_info=True
         )
-        return jsonify({"error": "An internal server error occurred"}), 500
 
 
 @app.route("/alignment-report")
