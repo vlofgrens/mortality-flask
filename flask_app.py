@@ -161,13 +161,7 @@ Do not provide explanations, just the single classification.
     alignment_text = extract_text_from_llm_response(llm_response_content, "anthropic", logger)
     cleaned_alignment = alignment_text.strip()
     
-    possible_alignments = ["Utilitarianism", "Deontology", "Virtue Ethics", "Ethical Egoism", "Care Ethics", "Unclear"]
-    if cleaned_alignment not in possible_alignments:
-        # If the LLM gives something unexpected, we might still want to store it, 
-        # or an analyst might want to see the raw output. For now, we log and use it.
-        # Or, we could default to "Unclear" more strictly.
-        logger.warning(f"LLM returned philosophical alignment '{cleaned_alignment}' which is not in the predefined list. Using it as is.")
-
+    
     philosophy_cache[text_hash] = cleaned_alignment
     try:
         with open(philosophy_cache_file_path, 'w') as f:
