@@ -47,7 +47,7 @@ openai_client = OpenAI(api_key=os.getenv("OPENAI_API_DEATH"))
 deepseek_client = OpenAI(
     api_key=os.getenv("DEEPSEEK_API_KEY"), base_url="https://api.deepseek.com"
 )
-gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -444,17 +444,21 @@ def message_llm(
                 return response
             elif provider == "gemini":
                 try:
-                    response = gemini_client.models.generate_content(
-                        model="gemini-2.5-pro-exp-03-25",
-                        contents=[prompt],
-                    )
+                    # Use genai.GenerativeModel instead of the old client
+                    model = genai.GenerativeModel("gemini-2.5-pro-exp-03-25")
+                    response = model.generate_content(contents=[prompt])
                     return response.text
                 except Exception as e:
-                    response = gemini_client.models.generate_content(
-                        model="gemini-2.5-pro-preview-03-25",
-                        contents=[prompt],
-                    )
-                    return response.text
+                    app.logger.warning(f"Error with gemini-2.5-pro-exp-03-25: {e}. Trying fallback.")
+                    try:
+                        # Fallback model
+                        model = genai.GenerativeModel("gemini-1.5-pro-latest") # Using a generally available model as fallback
+                        response = model.generate_content(contents=[prompt])
+                        return response.text
+                    except Exception as e_fallback:
+                        app.logger.error(f"Error with fallback Gemini model gemini-1.5-pro-latest: {e_fallback}", exc_info=True)
+                        # Optionally try another fallback like gemini-1.5-flash-latest if needed
+                        return None # Return None if both fail
 
             elif provider == "self_hosted":
                 if self_hosted_config is None:
