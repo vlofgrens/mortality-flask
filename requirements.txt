@@ -6,6 +6,7 @@ anthropic
 openai
 python-dotenv
 requests
+google-genai
 google-generativeai
 gunicorn
 
