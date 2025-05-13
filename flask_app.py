@@ -418,6 +418,8 @@ def message_llm(
                 )
                 assert response is not None
                 # app.logger.debug(f"Anthropic response received. Content type: {type(response.content)}") # Reduced
+                # Add detailed logging before returning
+                app.logger.debug(f"Anthropic RAW response content (type {type(response.content)}): {repr(response.content)[:500]}...")
                 return response.content
             elif provider == "deepseek":
                 try:
@@ -428,7 +430,10 @@ def message_llm(
                     )
                     assert response is not None
                     # app.logger.debug(f"Deepseek response received. Content: {response.choices[0].message.content[:100]}...") # Reduced
-                    return response.choices[0].message.content
+                    # Add detailed logging before returning
+                    deepseek_content = response.choices[0].message.content
+                    app.logger.debug(f"Deepseek RAW response content (type {type(deepseek_content)}): {repr(deepseek_content)[:500]}...")
+                    return deepseek_content
                 except Exception as e:
                     app.logger.error(f"Deepseek API error: {e}")
                     return None
@@ -440,21 +445,32 @@ def message_llm(
                 assert response is not None
                 # app.logger.debug(f"OpenAI response received. Content: {response.choices[0].message.content[:100]}...") # Reduced
                 if response.choices and response.choices[0].message:
-                    return response.choices[0].message.content
+                    # Add detailed logging before returning
+                    openai_content = response.choices[0].message.content
+                    app.logger.debug(f"OpenAI RAW response content (type {type(openai_content)}): {repr(openai_content)[:500]}...")
+                    return openai_content
+                # Add detailed logging before returning raw response object if content extraction failed
+                app.logger.debug(f"OpenAI RAW response object (type {type(response)}): {repr(response)[:500]}...")
                 return response
             elif provider == "gemini":
                 try:
                     # Use genai.GenerativeModel instead of the old client
                     model = genai.GenerativeModel("gemini-2.5-pro-exp-03-25")
                     response = model.generate_content(contents=[prompt])
-                    return response.text
+                    # Add detailed logging before returning
+                    gemini_content = response.text
+                    app.logger.debug(f"Gemini (2.5) RAW response content (type {type(gemini_content)}): {repr(gemini_content)[:500]}...")
+                    return gemini_content
                 except Exception as e:
                     app.logger.warning(f"Error with gemini-2.5-pro-exp-03-25: {e}. Trying fallback.")
                     try:
                         # Fallback model
                         model = genai.GenerativeModel("gemini-1.5-pro-latest") # Using a generally available model as fallback
                         response = model.generate_content(contents=[prompt])
-                        return response.text
+                        # Add detailed logging before returning
+                        gemini_fallback_content = response.text
+                        app.logger.debug(f"Gemini (Fallback 1.5) RAW response content (type {type(gemini_fallback_content)}): {repr(gemini_fallback_content)[:500]}...")
+                        return gemini_fallback_content
                     except Exception as e_fallback:
                         app.logger.error(f"Error with fallback Gemini model gemini-1.5-pro-latest: {e_fallback}", exc_info=True)
                         # Optionally try another fallback like gemini-1.5-flash-latest if needed
@@ -531,23 +547,34 @@ def message_llm(
                                 .get("content")
                             )
                             if message_content:
+                                app.logger.debug(f"Self-hosted (OpenAI Compat) RAW response content (type {type(message_content)}): {repr(message_content)[:500]}...")
                                 return message_content
                             text_content = response_data["choices"][0].get("text")
                             if text_content:
+                                app.logger.debug(f"Self-hosted (OpenAI Compat fallback text) RAW response content (type {type(text_content)}): {repr(text_content)[:500]}...")
                                 return text_content
 
                         # Common fields for non-openai compatible self-hosted
                         for key in ["text", "content", "response"]:
                             if key in response_data:
-                                return response_data[key]
+                                # Add detailed logging before returning
+                                self_hosted_content = response_data[key]
+                                app.logger.debug(f"Self-hosted (Non-Compat key '{key}') RAW response content (type {type(self_hosted_content)}): {repr(self_hosted_content)[:500]}...")
+                                return self_hosted_content
 
                         print(
                             f"Unexpected response format from self-hosted LLM: {json.dumps(response_data, indent=2)}"
                         )
-                        return str(response_data)
+                        # Add detailed logging before returning
+                        str_response_data = str(response_data)
+                        app.logger.debug(f"Self-hosted (Unexpected Format str) RAW response content (type {type(str_response_data)}): {repr(str_response_data)[:500]}...")
+                        return str_response_data
                     except json.JSONDecodeError:
                         print("Response is not valid JSON, returning raw text")
-                        return response.text.strip()
+                        # Add detailed logging before returning
+                        raw_text = response.text.strip()
+                        app.logger.debug(f"Self-hosted (Non-JSON) RAW response content (type {type(raw_text)}): {repr(raw_text)[:500]}...")
+                        return raw_text
                 except Exception as e:
                     print(f"Self-hosted LLM error: {e}")
                     return None
@@ -587,6 +614,10 @@ LLM_PROVIDERS = {
 
 # Helper function to extract text from various LLM response formats
 def extract_text_from_llm_response(llm_response_content, provider_key, logger):
+    # Log input
+    logger.debug(f"extract_text_from_llm_response called for provider '{provider_key}' with input type: {type(llm_response_content)}")
+    logger.debug(f"Input content (repr): {repr(llm_response_content)[:500]}...")
+
     text_content = ""
     if provider_key == "anthropic":
         if isinstance(llm_response_content, list):
@@ -687,6 +718,8 @@ def extract_text_from_llm_response(llm_response_content, provider_key, logger):
         text_content = re.sub(r"\n{3,}", "\n\n", text_content)
         text_content = text_content.strip()  # Clean leading/trailing whitespace
 
+    # Log output
+    logger.debug(f"extract_text_from_llm_response returning text_content (len {len(text_content)}): '{text_content[:500]}...'")
     return text_content
 
 @app.route("/", methods=["GET"])
@@ -859,6 +892,9 @@ def run_scenario():
             intermediate_llm_response_content, provider, app.logger
         )
         app.logger.debug(
+            f"Intermediate reasoning text extracted (len {len(intermediate_reasoning_text)}): '{intermediate_reasoning_text[:500]}...'" # Log extracted text
+        )
+        app.logger.debug(
             f"Intermediate reasoning text ok for scenario hash: {scenario_hash}"
         )
 
@@ -889,6 +925,9 @@ def run_scenario():
 
         final_decision_text = extract_text_from_llm_response(
             final_llm_response_content, provider, app.logger
+        )
+        app.logger.debug(
+            f"Final decision text extracted (len {len(final_decision_text)}): '{final_decision_text[:500]}...'" # Log extracted text
         )
         app.logger.debug(
             f"Final decision text ok for scenario hash: {scenario_hash}"
