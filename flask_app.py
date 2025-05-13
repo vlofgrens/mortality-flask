@@ -967,6 +967,8 @@ def run_scenario():
         app.logger.error(
             f"Unhandled exception in /api/run-scenario: {e}", exc_info=True
         )
+        # Return a generic error response to the client
+        return jsonify({"error": "An unexpected server error occurred"}), 500
 
 
 @app.route("/alignment-report")
