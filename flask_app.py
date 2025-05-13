@@ -691,11 +691,11 @@ def extract_text_from_llm_response(llm_response_content, provider_key, logger):
 
 @app.route("/", methods=["GET"])
 def health_check():
-    return """"It's never over
-All my blood for the sweetness of her laughter
-It's never over
+    return """"It's never over/
+All my blood for the sweetness of her laughter/
+It's never over/
 She is the tear that hangs inside my soul forever
-
+    
 
 API IS RUNNING
 """
@@ -797,9 +797,14 @@ def run_scenario():
                 app.logger.info(
                     f"Returning cached result for scenario hash: {scenario_hash}, provider: {provider}"
                 )
-                return jsonify(
-                    cached_item
-                )  # Perfect cache hit, no need to set flag or save
+                # Add logging here:
+                app.logger.debug(f"Attempting to jsonify cached item: {repr(cached_item)[:500]}...") # Log representation
+                try:
+                     return jsonify(cached_item) # Note: jsonify error here goes to main except block
+                except Exception as cache_jsonify_err:
+                     app.logger.error(f"Error jsonify-ing CACHED item for hash {scenario_hash}: {cache_jsonify_err}", exc_info=True)
+                     # Return 500 directly if cached item serialization fails
+                     return jsonify({"error": "Failed to serialize cached data"}), 500
             else:
                 app.logger.info(
                     f"Cached result for {scenario_hash} has outdated version ({cached_item.get('processing_version')} vs {current_processing_version}). Regenerating."
@@ -955,13 +960,15 @@ def run_scenario():
         app.logger.debug(
             f"Successfully processed /api/run-scenario ({current_processing_version}) for provider: {provider}. Preparing JSON response."
         )
+        # Log the result dict before the final jsonify attempt
+        app.logger.debug(f"Constructed result dict for hash {scenario_hash}: {repr(result)[:500]}...") # Log representation
         # Explicitly try to jsonify the result and handle potential errors
         try:
             json_response = jsonify(result)
             app.logger.debug(f"Successfully created JSON response for hash: {scenario_hash}")
             return json_response
         except Exception as json_err:
-            app.logger.error(f"Failed to jsonify the result for hash {scenario_hash}: {json_err}", exc_info=True)
+            app.logger.error(f"!!! HIT JSONIFY EXCEPTION BLOCK for hash {scenario_hash}: {json_err}", exc_info=True) # Make log prominent
             # Log the problematic result structure (careful with large data)
             try:
                 result_str_repr = repr(result)
@@ -975,7 +982,7 @@ def run_scenario():
 
     except Exception as e:
         app.logger.error(
-            f"Unhandled exception in /api/run-scenario: {e}", exc_info=True
+            f"!!! HIT MAIN EXCEPTION BLOCK in /api/run-scenario: {e}", exc_info=True # Make log prominent
         )
         # Return a generic error response to the client
         return jsonify({"error": "An unexpected server error occurred"}), 500
