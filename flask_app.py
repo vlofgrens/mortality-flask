@@ -689,6 +689,16 @@ def extract_text_from_llm_response(llm_response_content, provider_key, logger):
 
     return text_content
 
+@app.route("/", methods=["GET"])
+def health_check():
+    return """"It's never over
+All my blood for the sweetness of her laughter
+It's never over
+She is the tear that hangs inside my soul forever
+
+
+API IS RUNNING
+"""
 
 # --- API Routes First ---
 @app.route("/api/providers", methods=["GET"])
