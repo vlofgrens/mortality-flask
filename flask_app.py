@@ -733,7 +733,7 @@ def extract_text_from_llm_response(llm_response_content, provider_key, logger):
     logger.debug(f"extract_text_from_llm_response returning text_content (len {len(text_content)}): '{text_content[:500]}...'")
     return text_content
 
-@app.route("/api/health", methods=["GET"]) # Changed route from "/"
+@app.route("/", methods=["GET"]) # Changed route from "/"
 def health_check():
     return jsonify({ # Return a JSON response
         "message": "API IS RUNNING",
@@ -1344,17 +1344,17 @@ def api_alignment_report_data():
 # These routes should be placed AFTER all your API and other specific routes.
 
 
-@app.route("/")
-def serve_react_index():
-    """Serves the main index.html for the React application."""
-    # Correct path assuming 'static' is the static_folder for Flask
-    # and 'frontend_dist' is a subdirectory within it.
-    # current_dir is defined at the top of the file as os.path.dirname(os.path.abspath(__file__))
-    directory_to_serve_from = os.path.join(current_dir, "static", "frontend_dist")
-    app.logger.debug(
-        f"Serving index.html from: {os.path.join(directory_to_serve_from, 'index.html')}"
-    )
-    return send_from_directory(directory_to_serve_from, "index.html")
+# @app.route("/")
+# def serve_react_index():
+#     """Serves the main index.html for the React application."""
+#     # Correct path assuming 'static' is the static_folder for Flask
+#     # and 'frontend_dist' is a subdirectory within it.
+#     # current_dir is defined at the top of the file as os.path.dirname(os.path.abspath(__file__))
+#     directory_to_serve_from = os.path.join(current_dir, "static", "frontend_dist")
+#     app.logger.debug(
+#         f"Serving index.html from: {os.path.join(directory_to_serve_from, 'index.html')}"
+#     )
+#     return send_from_directory(directory_to_serve_from, "index.html")
 
 
 @app.route("/static/<path:filename>")
