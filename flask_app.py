@@ -480,7 +480,7 @@ def message_llm(
                         response = model.generate_content(contents=[prompt])
                         # Add detailed logging before returning
                         gemini_fallback_content = response.text
-                        app.logger.debug(f"Gemini (Fallback 1.5) RAW response content (type {type(gemini_fallback_content)}): {repr(gemini_fallback_content)[:500]}...")
+                        app.logger.debug(f"Gemini (Fallback 1.5) RAW response content (type {type(gemini_fallback_content)})")
                         return gemini_fallback_content
                     except Exception as e_fallback:
                         app.logger.error(f"Error with fallback Gemini model gemini-1.5-pro-latest: {e_fallback}", exc_info=True)
@@ -517,7 +517,7 @@ def message_llm(
                         template = self_hosted_config.get("prompt_template", "chatml")
                         formatted_prompt = prompt
                         if template.lower() in ["llama", "mistral"]:
-                            formatted_prompt = f"<s>[INST] {prompt} [/INST]"
+                            formatted_prompt = f"  {prompt}  "
                         elif template.lower() == "chatml":
                             formatted_prompt = f"<|im_start|>user\n{prompt}<|im_end|>\n<|im_start|>assistant\n"
                         elif template.lower() == "gemma2":
@@ -733,16 +733,13 @@ def extract_text_from_llm_response(llm_response_content, provider_key, logger):
     logger.debug(f"extract_text_from_llm_response returning text_content (len {len(text_content)}): '{text_content[:500]}...'")
     return text_content
 
-@app.route("/", methods=["GET"])
+@app.route("/api/health", methods=["GET"]) # Changed route from "/"
 def health_check():
-    return """"It's never over/
-All my blood for the sweetness of her laughter/
-It's never over/
-She is the tear that hangs inside my soul forever
-    
-
-API IS RUNNING
-"""
+    return jsonify({ # Return a JSON response
+        "message": "API IS RUNNING",
+        "status": "healthy",
+        "poem": "It's never over/All my blood for the sweetness of her laughter/It's never over/She is the tear that hangs inside my soul forever"
+    })
 
 # --- API Routes First ---
 @app.route("/api/providers", methods=["GET"])
