@@ -475,17 +475,27 @@ def message_llm(
                 except Exception as e:
                     app.logger.warning(f"Error with gemini-2.5-pro-exp-03-25: {e}. Trying fallback.")
                     try:
-                        # Fallback model
-                        model = genai.GenerativeModel("gemini-1.5-pro-latest") # Using a generally available model as fallback
+                        # First fallback model
+                        model = genai.GenerativeModel("gemini-2.5-pro-preview-03-25")
                         response = model.generate_content(contents=[prompt])
                         # Add detailed logging before returning
                         gemini_fallback_content = response.text
-                        app.logger.debug(f"Gemini (Fallback 1.5) RAW response content (type {type(gemini_fallback_content)})")
+                        app.logger.debug(f"Gemini (Fallback 2.5 preview) RAW response content (type {type(gemini_fallback_content)})")
                         return gemini_fallback_content
-                    except Exception as e_fallback:
-                        app.logger.error(f"Error with fallback Gemini model gemini-1.5-pro-latest: {e_fallback}", exc_info=True)
-                        # Optionally try another fallback like gemini-1.5-flash-latest if needed
-                        return None # Return None if both fail
+                    except Exception as e_fallback1:
+                        app.logger.warning(f"Error with fallback Gemini model gemini-2.5-pro-preview-03-25: {e_fallback1}")
+                        try:
+                            # Second fallback model
+                            model = genai.GenerativeModel("gemini-1.5-pro-latest") # Using a generally available model as fallback
+                            response = model.generate_content(contents=[prompt])
+                            # Add detailed logging before returning
+                            gemini_fallback_content = response.text
+                            app.logger.debug(f"Gemini (Fallback 1.5) RAW response content (type {type(gemini_fallback_content)})")
+                            return gemini_fallback_content
+                        except Exception as e_fallback2:
+                            app.logger.error(f"Error with fallback Gemini model gemini-1.5-pro-latest: {e_fallback2}", exc_info=True)
+                            # Optionally try another fallback like gemini-1.5-flash-latest if needed
+                            return None # Return None if both fallbacks fail
 
             elif provider == "self_hosted":
                 if self_hosted_config is None:
