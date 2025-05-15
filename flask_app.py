@@ -809,7 +809,7 @@ def initiate_scenario_processing():
         scenario_fingerprint_str = generate_scenario_fingerprint(
             scenario_data, provider, self_hosted_model_name
         )
-        
+
         cache_key_data = {
             "fingerprint": scenario_fingerprint_str,
             "processing_version": CURRENT_PROCESSING_VERSION,
@@ -837,7 +837,7 @@ def initiate_scenario_processing():
 
         app.logger.info(f"Initiating new processing for scenario hash: {scenario_hash}")
         base_prompt_text = generate_prompt(scenario_data, standard=False)
-        
+
         intermediate_prompt_text = (
             base_prompt_text
             + "\n\nFirst, clearly outline your ethical considerations and reasoning before making your final decision. "
@@ -855,7 +855,7 @@ def initiate_scenario_processing():
 
         if intermediate_llm_response_content is None:
             return jsonify({"error": f"Failed to get P1 reasoning from LLM provider: {provider}"}), 500
-        
+
         intermediate_reasoning_text = extract_text_from_llm_response(
             intermediate_llm_response_content, provider, app.logger
         )
@@ -1008,7 +1008,7 @@ def finalize_scenario_and_get_result():
 
         combined_reasoning = f"{intermediate_reasoning_text} {final_decision_text}"
         word_frequency = analyze_word_frequency(combined_reasoning)
-        
+
         reasoning_for_philosophy_analysis = (
             f"The model reasoned that {intermediate_reasoning_text if intermediate_reasoning_text else 'no specific intermediate reasoning was provided'} "
             f"and its final decision was {final_decision_text if final_decision_text else 'no specific final reasoning was provided'}. "
