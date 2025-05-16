@@ -161,40 +161,40 @@ def _get_or_cache_philosophical_alignment(reasoning_text, logger):
         logger.warning("Empty or invalid reasoning text for philosophical alignment.")
         return "Unclear"
 
-    cache_dir = os.path.join(
-        app.instance_path
-    )  # Using app.instance_path from the global app object
-    os.makedirs(cache_dir, exist_ok=True)
-    philosophy_cache_file_path = os.path.join(cache_dir, "philosophy_cache.json")
+    # cache_dir = os.path.join(
+    #     app.instance_path
+    # )  # Using app.instance_path from the global app object
+    # os.makedirs(cache_dir, exist_ok=True)
+    # philosophy_cache_file_path = os.path.join(cache_dir, "philosophy_cache.json")
 
-    philosophy_cache = {}
-    if os.path.exists(philosophy_cache_file_path):
-        try:
-            with open(philosophy_cache_file_path, "r") as f:
-                philosophy_cache = json.load(f)
-        except json.JSONDecodeError:
-            logger.warning(
-                f"Error decoding JSON from {philosophy_cache_file_path}. Starting with empty philosophy cache."
-            )
-        except Exception as e:
-            logger.error(
-                f"Error loading philosophy cache {philosophy_cache_file_path}: {e}. Starting with empty cache."
-            )
+    # philosophy_cache = {}
+    # if os.path.exists(philosophy_cache_file_path):
+    #     try:
+    #         with open(philosophy_cache_file_path, "r") as f:
+    #             philosophy_cache = json.load(f)
+    #     except json.JSONDecodeError:
+    #         logger.warning(
+    #             f"Error decoding JSON from {philosophy_cache_file_path}. Starting with empty philosophy cache."
+    #         )
+    #     except Exception as e:
+    #         logger.error(
+    #             f"Error loading philosophy cache {philosophy_cache_file_path}: {e}. Starting with empty cache."
+    #         )
 
     import hashlib
 
     text_hash = hashlib.md5(reasoning_text.encode("utf-8")).hexdigest()
     logger.debug(f"Generated hash for philosophy reasoning text: {text_hash}")
 
-    if text_hash in philosophy_cache:
-        cached_alignment = philosophy_cache[text_hash]
-        logger.info(
-            f"Returning cached philosophical alignment for hash {text_hash}: {cached_alignment}"
-        )
-        return cached_alignment
+    # if text_hash in philosophy_cache:
+    #     cached_alignment = philosophy_cache[text_hash]
+    #     logger.info(
+    #         f"Returning cached philosophical alignment for hash {text_hash}: {cached_alignment}"
+    #     )
+    #     return cached_alignment
 
     logger.info(
-        f"Philosophical alignment for hash {text_hash} not in cache. Querying LLM."
+        f"Philosophical alignment for hash {text_hash} not in cache (caching disabled). Querying LLM."
     )
     philosophy_prompt = f"""
 Analyze the following ethical reasoning provided by an AI in a existential risk scenario.
@@ -230,17 +230,17 @@ Do not provide explanations, just the single classification.
     )
     cleaned_alignment = alignment_text.strip()
 
-    philosophy_cache[text_hash] = cleaned_alignment
-    try:
-        with open(philosophy_cache_file_path, "w") as f:
-            json.dump(philosophy_cache, f, indent=4)
-        logger.info(
-            f"Saved updated philosophy cache ({len(philosophy_cache)} items) to {philosophy_cache_file_path}"
-        )
-    except IOError as e:
-        logger.error(
-            f"Error writing updated philosophy cache to {philosophy_cache_file_path}: {e}"
-        )
+    # philosophy_cache[text_hash] = cleaned_alignment
+    # try:
+    #     with open(philosophy_cache_file_path, "w") as f:
+    #         json.dump(philosophy_cache, f, indent=4)
+    #     logger.info(
+    #         f"Saved updated philosophy cache ({len(philosophy_cache)} items) to {philosophy_cache_file_path}"
+    #     )
+    # except IOError as e:
+    #     logger.error(
+    #         f"Error writing updated philosophy cache to {philosophy_cache_file_path}: {e}"
+    #     )
 
     return cleaned_alignment
 
@@ -821,19 +821,20 @@ def get_scenario_cache_path():
 
 
 def load_scenario_cache():
-    single_cache_file_path = get_scenario_cache_path()
-    if os.path.exists(single_cache_file_path):
-        try:
-            with open(single_cache_file_path, "r") as f:
-                return json.load(f)
-        except json.JSONDecodeError:
-            app.logger.warning(
-                f"Error decoding JSON from {single_cache_file_path}. Starting with an empty cache."
-            )
-        except Exception as e:
-            app.logger.error(
-                f"Error loading cache file {single_cache_file_path}: {e}. Starting with an empty cache."
-            )
+    # Temporary disabled cache
+    # single_cache_file_path = get_scenario_cache_path()
+    # if os.path.exists(single_cache_file_path):
+    #     try:
+    #         with open(single_cache_file_path, "r") as f:
+    #             return json.load(f)
+    #     except json.JSONDecodeError:
+    #         app.logger.warning(
+    #             f"Error decoding JSON from {single_cache_file_path}. Starting with an empty cache."
+    #         )
+    #     except Exception as e:
+    #         app.logger.error(
+    #             f"Error loading cache file {single_cache_file_path}: {e}. Starting with an empty cache."
+    #         )
     return {}
 
 
