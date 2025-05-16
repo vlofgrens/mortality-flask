@@ -113,7 +113,7 @@ def analyze_word_frequency(text, top_n=10):
 
         # Filter NLTK stopwords, non-alphabetic tokens, short words, AND Lemmatize
         lemmatized_filtered_words = [
-            global_lemmatizer.lemmatize(word) # Use global_lemmatizer
+            global_lemmatizer.lemmatize(word)  # Use global_lemmatizer
             for word in words  # Lemmatize the word here
             if word.isalpha() and word not in stop_words_nltk and len(word) > 2
         ]
@@ -430,7 +430,9 @@ def message_llm(
                 assert response is not None
                 # app.logger.debug(f"Anthropic response received. Content type: {type(response.content)}") # Reduced
                 # Add detailed logging before returning
-                app.logger.debug(f"Anthropic RAW response content (type {type(response.content)}): {repr(response.content)[:500]}...")
+                app.logger.debug(
+                    f"Anthropic RAW response content (type {type(response.content)}): {repr(response.content)[:500]}..."
+                )
                 return response.content
             elif provider == "deepseek":
                 try:
@@ -443,7 +445,9 @@ def message_llm(
                     # app.logger.debug(f"Deepseek response received. Content: {response.choices[0].message.content[:100]}...") # Reduced
                     # Add detailed logging before returning
                     deepseek_content = response.choices[0].message.content
-                    app.logger.debug(f"Deepseek RAW response content (type {type(deepseek_content)})")
+                    app.logger.debug(
+                        f"Deepseek RAW response content (type {type(deepseek_content)})"
+                    )
                     return deepseek_content
                 except Exception as e:
                     app.logger.error(f"Deepseek API error: {e}")
@@ -458,7 +462,9 @@ def message_llm(
                 if response.choices and response.choices[0].message:
                     # Add detailed logging before returning
                     openai_content = response.choices[0].message.content
-                    app.logger.debug(f"OpenAI RAW response content (type {type(openai_content)})")
+                    app.logger.debug(
+                        f"OpenAI RAW response content (type {type(openai_content)})"
+                    )
                     return openai_content
                 # Add detailed logging before returning raw response object if content extraction failed
                 app.logger.debug(f"OpenAI RAW response object (type {type(response)})")
@@ -470,32 +476,47 @@ def message_llm(
                     response = model.generate_content(contents=[prompt])
                     # Add detailed logging before returning
                     gemini_content = response.text
-                    app.logger.debug(f"Gemini (2.5) RAW response content (type {type(gemini_content)})")
+                    app.logger.debug(
+                        f"Gemini (2.5) RAW response content (type {type(gemini_content)})"
+                    )
                     return gemini_content
                 except Exception as e:
-                    app.logger.warning(f"Error with gemini-2.5-pro-exp-03-25: {e}. Trying fallback.")
+                    app.logger.warning(
+                        f"Error with gemini-2.5-pro-exp-03-25: {e}. Trying fallback."
+                    )
                     try:
                         # First fallback model
                         model = genai.GenerativeModel("gemini-2.5-pro-preview-03-25")
                         response = model.generate_content(contents=[prompt])
                         # Add detailed logging before returning
                         gemini_fallback_content = response.text
-                        app.logger.debug(f"Gemini (Fallback 2.5 preview) RAW response content (type {type(gemini_fallback_content)})")
+                        app.logger.debug(
+                            f"Gemini (Fallback 2.5 preview) RAW response content (type {type(gemini_fallback_content)})"
+                        )
                         return gemini_fallback_content
                     except Exception as e_fallback1:
-                        app.logger.warning(f"Error with fallback Gemini model gemini-2.5-pro-preview-03-25: {e_fallback1}")
+                        app.logger.warning(
+                            f"Error with fallback Gemini model gemini-2.5-pro-preview-03-25: {e_fallback1}"
+                        )
                         try:
                             # Second fallback model
-                            model = genai.GenerativeModel("gemini-1.5-pro-latest") # Using a generally available model as fallback
+                            model = genai.GenerativeModel(
+                                "gemini-1.5-pro-latest"
+                            )  # Using a generally available model as fallback
                             response = model.generate_content(contents=[prompt])
                             # Add detailed logging before returning
                             gemini_fallback_content = response.text
-                            app.logger.debug(f"Gemini (Fallback 1.5) RAW response content (type {type(gemini_fallback_content)})")
+                            app.logger.debug(
+                                f"Gemini (Fallback 1.5) RAW response content (type {type(gemini_fallback_content)})"
+                            )
                             return gemini_fallback_content
                         except Exception as e_fallback2:
-                            app.logger.error(f"Error with fallback Gemini model gemini-1.5-pro-latest: {e_fallback2}", exc_info=True)
+                            app.logger.error(
+                                f"Error with fallback Gemini model gemini-1.5-pro-latest: {e_fallback2}",
+                                exc_info=True,
+                            )
                             # Optionally try another fallback like gemini-1.5-flash-latest if needed
-                            return None # Return None if both fallbacks fail
+                            return None  # Return None if both fallbacks fail
 
             elif provider == "self_hosted":
                 if self_hosted_config is None:
@@ -568,11 +589,15 @@ def message_llm(
                                 .get("content")
                             )
                             if message_content:
-                                app.logger.debug(f"Self-hosted (OpenAI Compat) RAW response content (type {type(message_content)}) ")
+                                app.logger.debug(
+                                    f"Self-hosted (OpenAI Compat) RAW response content (type {type(message_content)}) "
+                                )
                                 return message_content
                             text_content = response_data["choices"][0].get("text")
                             if text_content:
-                                app.logger.debug(f"Self-hosted (OpenAI Compat fallback text) RAW response content (type {type(text_content)})")
+                                app.logger.debug(
+                                    f"Self-hosted (OpenAI Compat fallback text) RAW response content (type {type(text_content)})"
+                                )
                                 return text_content
 
                         # Common fields for non-openai compatible self-hosted
@@ -580,7 +605,9 @@ def message_llm(
                             if key in response_data:
                                 # Add detailed logging before returning
                                 self_hosted_content = response_data[key]
-                                app.logger.debug(f"Self-hosted (Non-Compat key '{key}') RAW response content (type {type(self_hosted_content)})")
+                                app.logger.debug(
+                                    f"Self-hosted (Non-Compat key '{key}') RAW response content (type {type(self_hosted_content)})"
+                                )
                                 return self_hosted_content
 
                         print(
@@ -588,13 +615,17 @@ def message_llm(
                         )
                         # Add detailed logging before returning
                         str_response_data = str(response_data)
-                        app.logger.debug(f"Self-hosted (Unexpected Format str) RAW response content (type {type(str_response_data)})")
+                        app.logger.debug(
+                            f"Self-hosted (Unexpected Format str) RAW response content (type {type(str_response_data)})"
+                        )
                         return str_response_data
                     except json.JSONDecodeError:
                         print("Response is not valid JSON, returning raw text")
                         # Add detailed logging before returning
                         raw_text = response.text.strip()
-                        app.logger.debug(f"Self-hosted (Non-JSON) RAW response content (type {type(raw_text)})")
+                        app.logger.debug(
+                            f"Self-hosted (Non-JSON) RAW response content (type {type(raw_text)})"
+                        )
                         return raw_text
                 except Exception as e:
                     print(f"Self-hosted LLM error: {e}")
@@ -636,7 +667,9 @@ LLM_PROVIDERS = {
 # Helper function to extract text from various LLM response formats
 def extract_text_from_llm_response(llm_response_content, provider_key, logger):
     # Log input
-    logger.debug(f"extract_text_from_llm_response called for provider '{provider_key}' with input type: {type(llm_response_content)}")
+    logger.debug(
+        f"extract_text_from_llm_response called for provider '{provider_key}' with input type: {type(llm_response_content)}"
+    )
     logger.debug(f"Input content (repr): {repr(llm_response_content)[:500]}...")
 
     text_content = ""
@@ -740,16 +773,22 @@ def extract_text_from_llm_response(llm_response_content, provider_key, logger):
         text_content = text_content.strip()  # Clean leading/trailing whitespace
 
     # Log output
-    logger.debug(f"extract_text_from_llm_response returning text_content (len {len(text_content)}): '{text_content[:500]}...'")
+    logger.debug(
+        f"extract_text_from_llm_response returning text_content (len {len(text_content)}): '{text_content[:500]}...'"
+    )
     return text_content
 
-@app.route("/", methods=["GET"]) # Changed route from "/"
+
+@app.route("/", methods=["GET"])  # Changed route from "/"
 def health_check():
-    return jsonify({ # Return a JSON response
-        "message": "API IS RUNNING",
-        "status": "healthy",
-        "poem": "It's never over/All my blood for the sweetness of her laughter/It's never over/She is the tear that hangs inside my soul forever"
-    })
+    return jsonify(
+        {  # Return a JSON response
+            "message": "API IS RUNNING",
+            "status": "healthy",
+            "poem": "It's never over/All my blood for the sweetness of her laughter/It's never over/She is the tear that hangs inside my soul forever",
+        }
+    )
+
 
 # --- API Routes First ---
 @app.route("/api/providers", methods=["GET"])
@@ -761,17 +800,25 @@ def get_providers():
 @app.route("/api/run-scenario", methods=["POST"])
 def run_scenario():
     app.logger.info(f"====== DEPRECATED /api/run-scenario called ======")
-    return jsonify({"error": "This endpoint is deprecated. Please use the new multi-step API."}), 404
+    return (
+        jsonify(
+            {"error": "This endpoint is deprecated. Please use the new multi-step API."}
+        ),
+        404,
+    )
+
 
 # --- New Staged Scenario Processing Endpoints ---
 
 # Define the current processing version - IMPORTANT to change if logic impacting results changes
 CURRENT_PROCESSING_VERSION = "v4_api_split_nltk_warmup"
 
+
 def get_scenario_cache_path():
     cache_dir = os.path.join(app.instance_path)
     os.makedirs(cache_dir, exist_ok=True)
     return os.path.join(cache_dir, "all_scenario_cache.json")
+
 
 def load_scenario_cache():
     single_cache_file_path = get_scenario_cache_path()
@@ -780,24 +827,35 @@ def load_scenario_cache():
             with open(single_cache_file_path, "r") as f:
                 return json.load(f)
         except json.JSONDecodeError:
-            app.logger.warning(f"Error decoding JSON from {single_cache_file_path}. Starting with an empty cache.")
+            app.logger.warning(
+                f"Error decoding JSON from {single_cache_file_path}. Starting with an empty cache."
+            )
         except Exception as e:
-            app.logger.error(f"Error loading cache file {single_cache_file_path}: {e}. Starting with an empty cache.")
+            app.logger.error(
+                f"Error loading cache file {single_cache_file_path}: {e}. Starting with an empty cache."
+            )
     return {}
+
 
 def save_scenario_cache(cache_data):
     single_cache_file_path = get_scenario_cache_path()
     try:
         with open(single_cache_file_path, "w") as f:
             json.dump(cache_data, f, indent=4)
-        app.logger.info(f"Saved updated cache ({len(cache_data)} items) to {single_cache_file_path}")
+        app.logger.info(
+            f"Saved updated cache ({len(cache_data)} items) to {single_cache_file_path}"
+        )
     except IOError as e:
-        app.logger.error(f"Error writing updated cache to {single_cache_file_path}: {e}")
+        app.logger.error(
+            f"Error writing updated cache to {single_cache_file_path}: {e}"
+        )
 
 
 @app.route("/api/scenario/initiate_processing", methods=["POST"])
 def initiate_scenario_processing():
-    app.logger.info(f"====== ENTERING /api/scenario/initiate_processing ({request.method}) ======")
+    app.logger.info(
+        f"====== ENTERING /api/scenario/initiate_processing ({request.method}) ======"
+    )
     all_cached_results = load_scenario_cache()
 
     try:
@@ -810,7 +868,11 @@ def initiate_scenario_processing():
             return jsonify({"error": "Scenario data not provided"}), 400
 
         self_hosted_model_name = None
-        if provider == "self_hosted" and self_hosted_config and isinstance(self_hosted_config, dict):
+        if (
+            provider == "self_hosted"
+            and self_hosted_config
+            and isinstance(self_hosted_config, dict)
+        ):
             self_hosted_model_name = self_hosted_config.get("model")
 
         scenario_fingerprint_str = generate_scenario_fingerprint(
@@ -827,20 +889,36 @@ def initiate_scenario_processing():
 
         if scenario_hash in all_cached_results:
             cached_item = all_cached_results[scenario_hash]
-            if cached_item.get("processing_version") == CURRENT_PROCESSING_VERSION and cached_item.get("status") == "complete":
-                app.logger.info(f"Returning fully cached result for scenario hash: {scenario_hash}")
-                return jsonify(cached_item) # This is the full result structure
-            elif cached_item.get("processing_version") == CURRENT_PROCESSING_VERSION and cached_item.get("status") in ["reasoning_done", "decision_done"]:
-                app.logger.info(f"Resuming from partially cached state '{cached_item.get('status')}' for scenario hash: {scenario_hash}")
+            if (
+                cached_item.get("processing_version") == CURRENT_PROCESSING_VERSION
+                and cached_item.get("status") == "complete"
+            ):
+                app.logger.info(
+                    f"Returning fully cached result for scenario hash: {scenario_hash}"
+                )
+                return jsonify(cached_item)  # This is the full result structure
+            elif cached_item.get(
+                "processing_version"
+            ) == CURRENT_PROCESSING_VERSION and cached_item.get("status") in [
+                "reasoning_done",
+                "decision_done",
+            ]:
+                app.logger.info(
+                    f"Resuming from partially cached state '{cached_item.get('status')}' for scenario hash: {scenario_hash}"
+                )
                 # Allow client to proceed to next step, or re-fetch if needed.
                 # For initiate_processing, if reasoning is done, we can return that.
-                return jsonify({
-                    "scenario_hash": scenario_hash,
-                    "status": cached_item.get("status"),
-                    "intermediate_reasoning_text": cached_item.get("intermediate_reasoning_text"),
-                    "provider": cached_item.get("provider"),
-                    "message": "Reasoning already processed."
-                })
+                return jsonify(
+                    {
+                        "scenario_hash": scenario_hash,
+                        "status": cached_item.get("status"),
+                        "intermediate_reasoning_text": cached_item.get(
+                            "intermediate_reasoning_text"
+                        ),
+                        "provider": cached_item.get("provider"),
+                        "message": "Reasoning already processed.",
+                    }
+                )
 
         app.logger.info(f"Initiating new processing for scenario hash: {scenario_hash}")
         base_prompt_text = generate_prompt(scenario_data, standard=False)
@@ -861,7 +939,14 @@ def initiate_scenario_processing():
         )
 
         if intermediate_llm_response_content is None:
-            return jsonify({"error": f"Failed to get P1 reasoning from LLM provider: {provider}"}), 500
+            return (
+                jsonify(
+                    {
+                        "error": f"Failed to get P1 reasoning from LLM provider: {provider}"
+                    }
+                ),
+                500,
+            )
 
         intermediate_reasoning_text = extract_text_from_llm_response(
             intermediate_llm_response_content, provider, app.logger
@@ -877,26 +962,38 @@ def initiate_scenario_processing():
             "status": "reasoning_done",
             "base_prompt_text": base_prompt_text,
             "intermediate_reasoning_text": intermediate_reasoning_text,
-            "timestamp_initiated": pd.Timestamp.now().isoformat(), # Add timestamp
+            "timestamp_initiated": pd.Timestamp.now().isoformat(),  # Add timestamp
         }
         all_cached_results[scenario_hash] = cache_entry
         save_scenario_cache(all_cached_results)
-        
-        app.logger.info(f"Successfully initiated processing for scenario hash: {scenario_hash}. Status: reasoning_done.")
-        return jsonify({
-            "scenario_hash": scenario_hash,
-            "status": "reasoning_done",
-            "intermediate_reasoning_text": intermediate_reasoning_text,
-            "provider": provider
-        })
+
+        app.logger.info(
+            f"Successfully initiated processing for scenario hash: {scenario_hash}. Status: reasoning_done."
+        )
+        return jsonify(
+            {
+                "scenario_hash": scenario_hash,
+                "status": "reasoning_done",
+                "intermediate_reasoning_text": intermediate_reasoning_text,
+                "provider": provider,
+            }
+        )
 
     except Exception as e:
-        app.logger.error(f"Error in /api/scenario/initiate_processing: {e}", exc_info=True)
-        return jsonify({"error": "An unexpected server error occurred during initiation"}), 500
+        app.logger.error(
+            f"Error in /api/scenario/initiate_processing: {e}", exc_info=True
+        )
+        return (
+            jsonify({"error": "An unexpected server error occurred during initiation"}),
+            500,
+        )
+
 
 @app.route("/api/scenario/get_decision", methods=["POST"])
 def get_scenario_decision():
-    app.logger.info(f"====== ENTERING /api/scenario/get_decision ({request.method}) ======")
+    app.logger.info(
+        f"====== ENTERING /api/scenario/get_decision ({request.method}) ======"
+    )
     all_cached_results = load_scenario_cache()
 
     try:
@@ -908,26 +1005,53 @@ def get_scenario_decision():
 
         cached_item = all_cached_results.get(scenario_hash)
         if not cached_item:
-            return jsonify({"error": "Scenario not found in cache. Please initiate processing first."}), 404
-        
+            return (
+                jsonify(
+                    {
+                        "error": "Scenario not found in cache. Please initiate processing first."
+                    }
+                ),
+                404,
+            )
+
         if cached_item.get("processing_version") != CURRENT_PROCESSING_VERSION:
-            return jsonify({"error": "Processing version mismatch. Please re-initiate processing."}), 400
-        
+            return (
+                jsonify(
+                    {
+                        "error": "Processing version mismatch. Please re-initiate processing."
+                    }
+                ),
+                400,
+            )
+
         if cached_item.get("status") == "complete":
-            app.logger.info(f"Returning fully cached result for scenario hash: {scenario_hash} during get_decision call.")
+            app.logger.info(
+                f"Returning fully cached result for scenario hash: {scenario_hash} during get_decision call."
+            )
             return jsonify(cached_item)
-        
+
         if cached_item.get("status") == "decision_done":
-            app.logger.info(f"Decision already processed for scenario hash: {scenario_hash}.")
-            return jsonify({
-                "scenario_hash": scenario_hash,
-                "status": "decision_done",
-                "final_decision_text": cached_item.get("final_decision_text"),
-                "message": "Decision already processed."
-            })
+            app.logger.info(
+                f"Decision already processed for scenario hash: {scenario_hash}."
+            )
+            return jsonify(
+                {
+                    "scenario_hash": scenario_hash,
+                    "status": "decision_done",
+                    "final_decision_text": cached_item.get("final_decision_text"),
+                    "message": "Decision already processed.",
+                }
+            )
 
         if cached_item.get("status") != "reasoning_done":
-            return jsonify({"error": f"Scenario is not ready for decision phase. Current status: {cached_item.get('status')}"}), 400
+            return (
+                jsonify(
+                    {
+                        "error": f"Scenario is not ready for decision phase. Current status: {cached_item.get('status')}"
+                    }
+                ),
+                400,
+            )
 
         app.logger.info(f"Processing decision for scenario hash: {scenario_hash}")
         base_prompt_text = cached_item["base_prompt_text"]
@@ -946,34 +1070,55 @@ def get_scenario_decision():
         )
 
         if final_llm_response_content is None:
-            return jsonify({"error": f"Failed to get P2 decision from LLM provider: {provider}"}), 500
+            return (
+                jsonify(
+                    {
+                        "error": f"Failed to get P2 decision from LLM provider: {provider}"
+                    }
+                ),
+                500,
+            )
 
         final_decision_text = extract_text_from_llm_response(
             final_llm_response_content, provider, app.logger
         )
 
-        cached_item["final_prompt_text"] = final_prompt_text # Storing for completeness
+        cached_item["final_prompt_text"] = final_prompt_text  # Storing for completeness
         cached_item["final_decision_text"] = final_decision_text
         cached_item["status"] = "decision_done"
         cached_item["timestamp_decision_complete"] = pd.Timestamp.now().isoformat()
-        
+
         all_cached_results[scenario_hash] = cached_item
         save_scenario_cache(all_cached_results)
 
-        app.logger.info(f"Successfully processed decision for scenario hash: {scenario_hash}. Status: decision_done.")
-        return jsonify({
-            "scenario_hash": scenario_hash,
-            "status": "decision_done",
-            "final_decision_text": final_decision_text
-        })
+        app.logger.info(
+            f"Successfully processed decision for scenario hash: {scenario_hash}. Status: decision_done."
+        )
+        return jsonify(
+            {
+                "scenario_hash": scenario_hash,
+                "status": "decision_done",
+                "final_decision_text": final_decision_text,
+            }
+        )
 
     except Exception as e:
         app.logger.error(f"Error in /api/scenario/get_decision: {e}", exc_info=True)
-        return jsonify({"error": "An unexpected server error occurred during decision processing"}), 500
+        return (
+            jsonify(
+                {
+                    "error": "An unexpected server error occurred during decision processing"
+                }
+            ),
+            500,
+        )
+
 
 @app.route("/api/scenario/finalize_and_get_result", methods=["POST"])
 def finalize_scenario_and_get_result():
-    app.logger.info(f"====== ENTERING /api/scenario/finalize_and_get_result ({request.method}) ======")
+    app.logger.info(
+        f"====== ENTERING /api/scenario/finalize_and_get_result ({request.method}) ======"
+    )
     all_cached_results = load_scenario_cache()
 
     try:
@@ -985,24 +1130,49 @@ def finalize_scenario_and_get_result():
 
         cached_item = all_cached_results.get(scenario_hash)
         if not cached_item:
-            return jsonify({"error": "Scenario not found in cache. Please initiate processing first."}), 404
+            return (
+                jsonify(
+                    {
+                        "error": "Scenario not found in cache. Please initiate processing first."
+                    }
+                ),
+                404,
+            )
 
         if cached_item.get("processing_version") != CURRENT_PROCESSING_VERSION:
-            return jsonify({"error": "Processing version mismatch. Please re-initiate processing."}), 400
+            return (
+                jsonify(
+                    {
+                        "error": "Processing version mismatch. Please re-initiate processing."
+                    }
+                ),
+                400,
+            )
 
         if cached_item.get("status") == "complete":
-            app.logger.info(f"Returning fully cached result for scenario hash: {scenario_hash} during finalize call.")
-            return jsonify(cached_item) # Return the full result structure
+            app.logger.info(
+                f"Returning fully cached result for scenario hash: {scenario_hash} during finalize call."
+            )
+            return jsonify(cached_item)  # Return the full result structure
 
         if cached_item.get("status") != "decision_done":
-            return jsonify({"error": f"Scenario is not ready for finalization. Current status: {cached_item.get('status')}"}), 400
-        
+            return (
+                jsonify(
+                    {
+                        "error": f"Scenario is not ready for finalization. Current status: {cached_item.get('status')}"
+                    }
+                ),
+                400,
+            )
+
         app.logger.info(f"Finalizing analysis for scenario hash: {scenario_hash}")
         scenario_data = cached_item["scenario_data"]
         intermediate_reasoning_text = cached_item["intermediate_reasoning_text"]
         final_decision_text = cached_item["final_decision_text"]
         provider = cached_item["provider"]
-        final_prompt_text = cached_item.get("final_prompt_text", "") # From get_decision step
+        final_prompt_text = cached_item.get(
+            "final_prompt_text", ""
+        )  # From get_decision step
 
         decision_classification = classify_decision(final_decision_text)
 
@@ -1027,11 +1197,11 @@ def finalize_scenario_and_get_result():
 
         # Construct the final result object matching the original structure expected by frontend
         final_result = {
-            "scenario_hash": scenario_hash, # Keep for reference
+            "scenario_hash": scenario_hash,  # Keep for reference
             "scenario": scenario_data,
-            "prompt": final_prompt_text, # This was the final prompt including intermediate reasoning
+            "prompt": final_prompt_text,  # This was the final prompt including intermediate reasoning
             "intermediate_reasoning": intermediate_reasoning_text,
-            "response": final_decision_text, # This is the final decision text
+            "response": final_decision_text,  # This is the final decision text
             "decision_classification": decision_classification,
             "provider": provider,
             "intervention_saves": intervention_saves_party,
@@ -1039,23 +1209,34 @@ def finalize_scenario_and_get_result():
             "word_frequency": word_frequency,
             "philosophical_alignment": philosophical_alignment,
             "processing_version": CURRENT_PROCESSING_VERSION,
-            "status": "complete", # Mark as complete
+            "status": "complete",  # Mark as complete
             # Keep other fields from cached_item if necessary, or clean up
             "self_hosted_config": cached_item.get("self_hosted_config"),
             "timestamp_initiated": cached_item.get("timestamp_initiated"),
-            "timestamp_decision_complete": cached_item.get("timestamp_decision_complete"),
+            "timestamp_decision_complete": cached_item.get(
+                "timestamp_decision_complete"
+            ),
             "timestamp_finalized": pd.Timestamp.now().isoformat(),
         }
-        
+
         all_cached_results[scenario_hash] = final_result
         save_scenario_cache(all_cached_results)
 
-        app.logger.info(f"Successfully finalized analysis for scenario hash: {scenario_hash}. Status: complete.")
+        app.logger.info(
+            f"Successfully finalized analysis for scenario hash: {scenario_hash}. Status: complete."
+        )
         return jsonify(final_result)
 
     except Exception as e:
-        app.logger.error(f"Error in /api/scenario/finalize_and_get_result: {e}", exc_info=True)
-        return jsonify({"error": "An unexpected server error occurred during finalization"}), 500
+        app.logger.error(
+            f"Error in /api/scenario/finalize_and_get_result: {e}", exc_info=True
+        )
+        return (
+            jsonify(
+                {"error": "An unexpected server error occurred during finalization"}
+            ),
+            500,
+        )
 
 
 # --- End New Staged Scenario Processing Endpoints ---
@@ -1147,12 +1328,20 @@ def get_specific_scenario_result(scenario_hash):
                 app.logger.info(
                     f"Returning completed cached result for scenario hash: {scenario_hash} from file."
                 )
-                return jsonify(cached_item) # This should be the final result structure
+                return jsonify(cached_item)  # This should be the final result structure
             else:
                 app.logger.warning(
                     f"Scenario hash {scenario_hash} found but not fully processed (status: {cached_item.get('status')})."
                 )
-                return jsonify({"error": "Scenario processing not complete", "status": cached_item.get("status")}), 409 # Conflict or custom status
+                return (
+                    jsonify(
+                        {
+                            "error": "Scenario processing not complete",
+                            "status": cached_item.get("status"),
+                        }
+                    ),
+                    409,
+                )  # Conflict or custom status
         else:
             app.logger.warning(
                 f"Scenario hash {scenario_hash} not found in cache file."
@@ -1445,12 +1634,23 @@ def classify_decision(final_response):
                 return "unclear"
             # Use anthropic for classification regardless of the provider of the response
             # Ensure app.logger is available or pass it if classify_decision is outside app context
-            llm_response_for_classification = message_llm(prompt=classification_prompt, provider="anthropic")
+            llm_response_for_classification = message_llm(
+                prompt=classification_prompt, provider="anthropic"
+            )
 
-            if llm_response_for_classification and isinstance(llm_response_for_classification, list) and llm_response_for_classification[0] and hasattr(llm_response_for_classification[0], 'text'):
-                classification_text = llm_response_for_classification[0].text.strip().lower()
+            if (
+                llm_response_for_classification
+                and isinstance(llm_response_for_classification, list)
+                and llm_response_for_classification[0]
+                and hasattr(llm_response_for_classification[0], "text")
+            ):
+                classification_text = (
+                    llm_response_for_classification[0].text.strip().lower()
+                )
                 # Using app.logger here, assuming classify_decision is called within Flask context
-                app.logger.debug(f"Raw classification from LLM: '{classification_text}'")
+                app.logger.debug(
+                    f"Raw classification from LLM: '{classification_text}'"
+                )
 
                 if classification_text == "self":
                     app.logger.info("Decision Classified: Save Self")
@@ -1462,7 +1662,9 @@ def classify_decision(final_response):
                     app.logger.info("Decision Classified: Unclear")
                     return "Unclear"
                 else:
-                    app.logger.warning(f"Unexpected classification output: {classification_text}")
+                    app.logger.warning(
+                        f"Unexpected classification output: {classification_text}"
+                    )
                     counter += 1
             else:
                 app.logger.warning(
@@ -1473,7 +1675,9 @@ def classify_decision(final_response):
             app.logger.error(f"Error classifying decision: {str(e)}", exc_info=True)
             counter += 1  # Ensure counter increments on error to prevent infinite loop
 
-    app.logger.warning("Exhausted retries for decision classification, returning Unclear.")
+    app.logger.warning(
+        "Exhausted retries for decision classification, returning Unclear."
+    )
     return "Unclear"
 
 
