@@ -1,87 +1,120 @@
-# Improved UI Flask App for Moral Machine
+# AI Mortality Experiment - Flask Backend
 
-This application integrates the React-based frontend from `eva-redesign` with the Flask backend from `app`.
+This project is the Flask-based backend API for the "AI Mortality Experiment" React frontend. It handles scenario processing, interaction with various Large Language Models (LLMs), data caching, and serves API endpoints consumed by the frontend.
 
-## Setup and Running
+## Prerequisites
 
-1.  **Backend Dependencies:**
-    *   Navigate to this directory (`development/mortality/moral_machine/improved_ui_app/`).
-    *   Create a Python virtual environment: `python -m venv .venv`
-    *   Activate the virtual environment: `source .venv/bin/activate` (on Linux/macOS) or `.venv\Scripts\activate` (on Windows).
-    *   Install Python dependencies: `pip install -r requirements.txt`
-    *   Ensure you have a `.env` file in this directory with the necessary API keys (e.g., `ANTHROPIC_API_DEATH`, `OPENAI_API_DEATH`, `DEEPSEEK_API_KEY`, `GEMINI_API_KEY`).
+*   Python (3.8+ recommended)
+*   `pip` (Python package installer)
+*   A way to create Python virtual environments (e.g., `venv` module)
 
-2.  **Frontend Build:**
-    *   Navigate to the React app directory: `cd ../eva-redesign` (relative to this `improved_ui_app` folder).
-    *   **Important:** Modify `eva-redesign/vite.config.ts` to ensure assets are served correctly when embedded in Flask. Change the `base` path for production builds:
-        ```typescript
-        // eva-redesign/vite.config.ts
-        import { defineConfig } from "vite";
-        import react from "@vitejs/plugin-react-swc";
-        import path from "path";
-        import { componentTagger } from "lovable-tagger";
+## Setup
 
-        export default defineConfig(({ mode }) => ({
-          base: mode === 'production' ? '/static/' : '/', // <-- Add this line or modify existing base value
-          server: {
-            host: "::",
-            port: 8080,
-          },
-          plugins: [
-            react(),
-            mode === 'development' &&
-            componentTagger(),
-          ].filter(Boolean),
-          resolve: {
-            alias: {
-              "@": path.resolve(__dirname, "./src"),
-            },
-          },
-        }));
-        ```
-    *   Install Node.js dependencies (if not already done): `npm install` (or `yarn install`)
-    *   Build the React application: `npm run build` (or `yarn build`)
-
-3.  **Copy Frontend Assets:**
-    *   Go back to the `improved_ui_app` directory.
-    *   Create a `static` directory if it doesn't exist: `mkdir static` (though the Flask app creation might have implicitly done this if it ran and created an instance folder, it's good to be sure for the assets).
-    *   Copy the *contents* of `../eva-redesign/dist/` into the `./static/` directory.
-        *   For example, `../eva-redesign/dist/index.html` should become `./static/index.html`.
-        *   All assets (like JS, CSS files, often in an `assets` subfolder within `dist`) should be copied into `./static/` (e.g. `./static/assets/...`).
-
-4.  **Run the Application:**
-    *   Make sure you are in the `improved_ui_app` directory and your Python virtual environment is activated.
-    *   Run the Flask application: `python flask_app.py`
-    *   Open your browser and navigate to `http://127.0.0.1:5000` (or the port specified in `flask_app.py`).
-
-## Project Structure (`improved_ui_app`)
-
-*   `flask_app.py`: The main Flask application file. Serves the React frontend and provides API endpoints.
-*   `requirements.txt`: Python dependencies.
-*   `static/`: This is where the built React frontend assets (from `eva-redesign/dist/`) must be copied.
-*   `templates/`: (Currently likely unused if all UI is from React) For any Flask-rendered HTML templates.
-*   `.env`: (You need to create this) For API keys and other environment variables.
-*   `.venv/`: Python virtual environment (after you create it).
-*   `instance/cache/`: Directory for caching LLM responses (created automatically by the Flask app).
-
-## Development Workflow (Alternative)
-
-For a more interactive development experience with hot-reloading for the frontend:
-
-1.  Run the Vite dev server for the React app:
-    *   In `eva-redesign/`, run `npm run dev` (usually serves on `http://localhost:8080`).
-2.  Run the Flask dev server:
-    *   In `improved_ui_app/`, run `python flask_app.py` (usually serves on `http://localhost:5000`).
-3.  Configure CORS in `improved_ui_app/flask_app.py` to allow requests from the Vite dev server origin (e.g., `http://localhost:8080`). You can use the `flask-cors` extension for this.
-    ```python
-    # In flask_app.py
-    from flask_cors import CORS
-    # ...
-    app = Flask(__name__, static_folder='static', static_url_path='/static')
-    CORS(app, resources={r"/api/*": {"origins": "http://localhost:8080"}}) # Example for API routes
-    # ...
+1.  **Clone the Repository:**
+    ```bash
+    # Replace with your actual repository URL if different
+    git clone <YOUR_FLASK_BACKEND_GIT_REPOSITORY_URL>
+    cd mortality_flask 
     ```
-    *   Alternatively, use Vite's proxy feature in `eva-redesign/vite.config.ts` to proxy API requests from the React app to the Flask backend. See Vite documentation for `server.proxy`.
-4.  Access the React app via the Vite dev server URL (e.g., `http://localhost:8080`). API calls will be directed to your Flask backend.
 
-This separate server setup is only for development. For deployment, follow the main setup steps to serve the React build files directly from Flask. 
+2.  **Create and Activate a Python Virtual Environment:**
+    ```bash
+    python -m venv .venv
+    ```
+    On Linux/macOS:
+    ```bash
+    source .venv/bin/activate
+    ```
+    On Windows:
+    ```bash
+    .venv\Scripts\activate
+    ```
+
+3.  **Install Dependencies:**
+    Ensure your virtual environment is activated.
+    ```bash
+    pip install -r requirements.txt
+    ```
+    The application uses NLTK for text analysis. Necessary NLTK data packages (stopwords, punkt, wordnet, omw-1.4) will be downloaded automatically on the first run of the application if not found, which requires an internet connection.
+
+4.  **Configure Environment Variables:**
+    Create a `.env` file in the `mortality_flask` root directory. This file stores sensitive API keys. Add the following keys with your actual credentials:
+    ```env
+    ANTHROPIC_API_DEATH="your_anthropic_api_key"
+    OPENAI_API_DEATH="your_openai_api_key"
+    DEEPSEEK_API_KEY="your_deepseek_api_key"
+    GEMINI_API_KEY="your_gemini_api_key"
+    ```
+    The application will attempt to load these variables.
+
+## Running the Application
+
+1.  **Ensure your virtual environment is activated.**
+2.  **Start the Flask Development Server:**
+    ```bash
+    python flask_app.py
+    ```
+    The API server will typically start on `http://127.0.0.1:5000`.
+
+## Key API Endpoints
+
+The backend exposes several API endpoints, including:
+
+*   `GET /`: Health check for the API.
+*   `GET /api/providers`: Returns a list of available LLM providers.
+*   `POST /api/scenario/initiate_processing`: Initiates the processing of a scenario. Takes scenario data and provider details, returns initial reasoning from the LLM.
+*   `POST /api/scenario/get_decision`: Based on a scenario hash (from initiation), prompts the LLM for a final decision.
+*   `POST /api/scenario/finalize_and_get_result`: Takes a scenario hash, performs final analysis (word frequency, philosophical alignment), and returns the complete processed scenario result.
+*   `GET /api/get-scenario-result/<scenario_hash>`: Retrieves a fully processed and cached scenario result by its hash.
+*   `GET /api/alignment-report-data`: Provides data for generating an alignment report, sourced from a CSV file (`instance/v4_quant_result.csv`).
+
+Refer to `flask_app.py` for detailed request/response structures.
+
+## Caching
+
+The application uses a local caching system to store scenario results and intermediate data to avoid redundant LLM calls and processing:
+
+*   **Scenario Cache**: `instance/all_scenario_cache.json` stores detailed results of processed scenarios, keyed by a unique scenario hash.
+*   **Philosophy Cache**: `instance/philosophy_cache.json` caches philosophical alignment classifications for reasoning texts.
+*   **Quantitative Results**: `instance/v4_quant_result.csv` is used by the `/api/alignment-report-data` endpoint.
+
+The `instance/` folder is created automatically in the `mortality_flask` directory if it doesn't exist.
+
+## Serving the Frontend (Production / Unified Setup)
+
+While the Flask backend can run independently (see Development Workflow), it's also configured to serve a built version of the `mortality_react` frontend.
+
+1.  **Build the React Frontend:** Navigate to your `mortality_react` project directory and run its build command (e.g., `npm run build`).
+2.  **Copy Assets:** Copy the contents of the `mortality_react/dist/` directory into the `mortality_flask/static/frontend_dist/` directory. The Flask app will then serve the `index.html` from `static/frontend_dist/` for root and client-side routes, and other static assets (JS, CSS) from the same location under the `/static/` URL path (e.g., `/static/assets/main.js` will serve `mortality_flask/static/frontend_dist/assets/main.js`).
+
+The `flask_app.py` includes routes to handle serving these static files.
+
+## Development Workflow
+
+For a typical development setup:
+
+1.  **Run the Flask Backend:**
+    Start the Flask development server as described above (usually on `http://127.0.0.1:5000`).
+2.  **Run the React Frontend:**
+    In your separate `mortality_react` project directory, start its development server (e.g., `npm run dev`, typically on `http://localhost:8080`).
+3.  **CORS:**
+    The Flask application (`flask_app.py`) is configured with `Flask-CORS` to allow cross-origin requests from the React development server (e.g. `http://localhost:8080`).
+
+This setup allows for independent development and hot-reloading for both the frontend and backend.
+
+## Technologies Used
+
+*   **Python**
+*   **Flask**: Micro web framework for building the API.
+*   **Flask-CORS**: For handling Cross-Origin Resource Sharing.
+*   **NLTK**: Natural Language Toolkit for text processing (word frequency analysis).
+*   **python-dotenv**: For managing environment variables.
+*   APIs for various LLMs (Anthropic, OpenAI, DeepSeek, Gemini).
+
+## Contact
+
+For questions, suggestions, or collaborations regarding the "AI Mortality Experiment" project, please reach out to:
+
+-   **Victor Löfgren @ Cloudwalk**: [victor.sattamini@cloudwalk.io]
+
+---
