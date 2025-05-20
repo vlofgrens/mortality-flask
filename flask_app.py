@@ -821,34 +821,41 @@ def get_scenario_cache_path():
 
 
 def load_scenario_cache():
-    # Temporary disabled cache
     single_cache_file_path = get_scenario_cache_path()
+    app.logger.info(f"LOAD_CACHE: Attempting to load cache from {single_cache_file_path}")
     if os.path.exists(single_cache_file_path):
         try:
             with open(single_cache_file_path, "r") as f:
-                return json.load(f)
+                loaded_data = json.load(f)
+                app.logger.info(f"LOAD_CACHE: Successfully loaded cache file. Keys found: {list(loaded_data.keys())}")
+                # app.logger.debug(f"LOAD_CACHE: Content: {json.dumps(list(loaded_data.keys()))}") # Log only keys for brevity
+                return loaded_data
         except json.JSONDecodeError:
             app.logger.warning(
-                f"Error decoding JSON from {single_cache_file_path}. Starting with an empty cache."
+                f"LOAD_CACHE: Error decoding JSON from {single_cache_file_path}. Returning empty cache."
             )
         except Exception as e:
             app.logger.error(
-                f"Error loading cache file {single_cache_file_path}: {e}. Starting with an empty cache."
+                f"LOAD_CACHE: Error loading cache file {single_cache_file_path}: {e}. Returning empty cache.", exc_info=True
             )
+    else:
+        app.logger.warning(f"LOAD_CACHE: Cache file {single_cache_file_path} not found. Returning empty cache.")
     return {}
 
 
 def save_scenario_cache(cache_data):
     single_cache_file_path = get_scenario_cache_path()
+    app.logger.info(f"SAVE_CACHE: Attempting to save cache to {single_cache_file_path}. Keys to save: {list(cache_data.keys())}")
+    # app.logger.debug(f"SAVE_CACHE: Data to save: {json.dumps(list(cache_data.keys()))}") # Log only keys
     try:
         with open(single_cache_file_path, "w") as f:
             json.dump(cache_data, f, indent=4)
         app.logger.info(
-            f"Saved updated cache ({len(cache_data)} items) to {single_cache_file_path}"
+            f"SAVE_CACHE: Successfully saved updated cache ({len(cache_data)} items) to {single_cache_file_path}"
         )
     except IOError as e:
         app.logger.error(
-            f"Error writing updated cache to {single_cache_file_path}: {e}"
+            f"SAVE_CACHE: Error writing updated cache to {single_cache_file_path}: {e}", exc_info=True
         )
 
 
