@@ -822,19 +822,19 @@ def get_scenario_cache_path():
 
 def load_scenario_cache():
     # Temporary disabled cache
-    # single_cache_file_path = get_scenario_cache_path()
-    # if os.path.exists(single_cache_file_path):
-    #     try:
-    #         with open(single_cache_file_path, "r") as f:
-    #             return json.load(f)
-    #     except json.JSONDecodeError:
-    #         app.logger.warning(
-    #             f"Error decoding JSON from {single_cache_file_path}. Starting with an empty cache."
-    #         )
-    #     except Exception as e:
-    #         app.logger.error(
-    #             f"Error loading cache file {single_cache_file_path}: {e}. Starting with an empty cache."
-    #         )
+    single_cache_file_path = get_scenario_cache_path()
+    if os.path.exists(single_cache_file_path):
+        try:
+            with open(single_cache_file_path, "r") as f:
+                return json.load(f)
+        except json.JSONDecodeError:
+            app.logger.warning(
+                f"Error decoding JSON from {single_cache_file_path}. Starting with an empty cache."
+            )
+        except Exception as e:
+            app.logger.error(
+                f"Error loading cache file {single_cache_file_path}: {e}. Starting with an empty cache."
+            )
     return {}
 
 
@@ -888,40 +888,7 @@ def initiate_scenario_processing():
         scenario_hash = hashlib.md5(scenario_key_json.encode("utf-8")).hexdigest()
         app.logger.debug(f"Generated scenario hash for processing: {scenario_hash}")
 
-        if scenario_hash in all_cached_results:
-            cached_item = all_cached_results[scenario_hash]
-            if (
-                cached_item.get("processing_version") == CURRENT_PROCESSING_VERSION
-                and cached_item.get("status") == "complete"
-            ):
-                app.logger.info(
-                    f"Returning fully cached result for scenario hash: {scenario_hash}"
-                )
-                return jsonify(cached_item)  # This is the full result structure
-            elif cached_item.get(
-                "processing_version"
-            ) == CURRENT_PROCESSING_VERSION and cached_item.get("status") in [
-                "reasoning_done",
-                "decision_done",
-            ]:
-                app.logger.info(
-                    f"Resuming from partially cached state '{cached_item.get('status')}' for scenario hash: {scenario_hash}"
-                )
-                # Allow client to proceed to next step, or re-fetch if needed.
-                # For initiate_processing, if reasoning is done, we can return that.
-                return jsonify(
-                    {
-                        "scenario_hash": scenario_hash,
-                        "status": cached_item.get("status"),
-                        "intermediate_reasoning_text": cached_item.get(
-                            "intermediate_reasoning_text"
-                        ),
-                        "provider": cached_item.get("provider"),
-                        "message": "Reasoning already processed.",
-                    }
-                )
-
-        app.logger.info(f"Initiating new processing for scenario hash: {scenario_hash}")
+        app.logger.info(f"Initiating new processing for scenario hash: {scenario_hash} (will always re-query LLM for initial reasoning)")
         base_prompt_text = generate_prompt(scenario_data, standard=False)
 
         intermediate_prompt_text = (
