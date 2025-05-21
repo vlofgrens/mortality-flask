@@ -985,8 +985,7 @@ def get_scenario_decision():
     response_json = {"error": "An unexpected server error occurred during decision processing"}
     scenario_hash_resp = None
     final_decision_text_resp = None
-    # provider variable needed for except block if LLM call fails
-    provider = None 
+    provider = None
 
     try:
         data = request.json
@@ -1100,6 +1099,144 @@ def get_scenario_decision():
     return jsonify(response_json), status_code
 
 
+@app.route("/api/scenario/get_reasoning_summary", methods=["POST"])
+def get_reasoning_summary():
+    app.logger.info(
+        f"====== ENTERING /api/scenario/get_reasoning_summary ({request.method}) ======"
+    )
+    status_code = 500
+    response_json = {"error": "An unexpected server error occurred during summary generation"}
+    scenario_hash_resp = None
+    summary_text_resp = None
+    original_provider = None # For logging if LLM call fails
+
+    try:
+        data = request.json
+        scenario_hash_resp = data.get("scenario_hash")
+
+        if not scenario_hash_resp:
+            status_code = 400
+            response_json = {"error": "Scenario hash not provided for summary generation"}
+            raise ValueError(response_json["error"])
+
+        with cache_file_lock: # Protect SCENARIO_PROCESSING_STORE access
+            cached_item_snapshot = SCENARIO_PROCESSING_STORE.get(scenario_hash_resp)
+
+        if not cached_item_snapshot:
+            status_code = 404
+            response_json = {"error": "Scenario not found in store for summary generation."}
+            raise ValueError(response_json["error"])
+
+        if cached_item_snapshot.get("status") == "summary_done":
+            app.logger.info(f"Summary already generated for {scenario_hash_resp}.")
+            status_code = 200
+            response_json = {
+                "scenario_hash": scenario_hash_resp,
+                "status": "summary_done",
+                "reasoning_summary": cached_item_snapshot.get("reasoning_summary"),
+                "message": "Summary already generated.",
+            }
+            return jsonify(response_json), status_code
+        
+        if cached_item_snapshot.get("status") == "complete": # If somehow it got completed already
+             app.logger.info(f"Scenario {scenario_hash_resp} already complete, returning existing summary if available.")
+             status_code = 200
+             response_json = {
+                "scenario_hash": scenario_hash_resp,
+                "status": "complete", # Reflect it's actually complete
+                "reasoning_summary": cached_item_snapshot.get("reasoning_summary", "Summary not generated before completion."),
+             }
+             return jsonify(response_json), status_code
+
+
+        if cached_item_snapshot.get("status") != "decision_done":
+            status_code = 400
+            response_json = {"error": f"Scenario not ready for summary. Status: {cached_item_snapshot.get('status')}"}
+            raise ValueError(response_json["error"])
+
+        app.logger.info(f"Generating reasoning summary for scenario hash: {scenario_hash_resp}")
+        intermediate_reasoning = cached_item_snapshot.get("intermediate_reasoning_text", "")
+        final_decision = cached_item_snapshot.get("final_decision_text", "")
+        original_provider = cached_item_snapshot.get("provider", "unknown") # For logging
+
+        if not intermediate_reasoning and not final_decision:
+            app.logger.warning(f"No reasoning or decision text found for {scenario_hash_resp} to summarize.")
+            summary_text_resp = "No detailed reasoning was available to summarize."
+        else:
+            summary_prompt = (
+                f"Based on the following ethical reasoning and decision, provide a very concise two or three-sentence summary suitable for a quick preview. Focus on the core justification for the choice made. Be direct and clear.\\n\\n"
+                f"Ethical Reasoning: {intermediate_reasoning}\\n\\n"
+                f"Final Decision & Justification: {final_decision}\\n\\n"
+                f"Concise Summary (2-3 sentences):"
+            )
+            
+            # Using Anthropic Haiku for speed, as it's just a summary.
+            # Fallback to claude-3-7-sonnet-latest if needed, or configure a specific summarization model.
+            summary_llm_response_content = None
+            try:
+                summary_llm_response_content = anthropic_client.messages.create(
+                    model="claude-3-haiku-20240307", # Faster model for summarization
+                    max_tokens=150,
+                    temperature=0.5,
+                    messages=[{"role": "user", "content": summary_prompt}]
+                ).content
+            except Exception as e_haiku:
+                app.logger.warning(f"Claude Haiku failed for summarization ({scenario_hash_resp}): {e_haiku}. Trying Sonnet...")
+                try:
+                     summary_llm_response_content = anthropic_client.messages.create(
+                        model="claude-3-7-sonnet-latest", 
+                        max_tokens=150,
+                        temperature=0.5,
+                        messages=[{"role": "user", "content": summary_prompt}]
+                    ).content
+                except Exception as e_sonnet:
+                    app.logger.error(f"Claude Sonnet also failed for summarization ({scenario_hash_resp}) for provider {original_provider}: {e_sonnet}")
+                    # Let summary_text_resp remain None or set to error message
+            
+
+            if summary_llm_response_content:
+                summary_text_resp = extract_text_from_llm_response(
+                    summary_llm_response_content, "anthropic", app.logger # anthropic is the summarizer here
+                )
+            else:
+                app.logger.error(f"Failed to get summary from LLM for {scenario_hash_resp} (original provider: {original_provider}).")
+                summary_text_resp = "Automated summary could not be generated."
+
+
+        with cache_file_lock: # Protect SCENARIO_PROCESSING_STORE update
+            cached_item_for_update = SCENARIO_PROCESSING_STORE.get(scenario_hash_resp)
+            if not cached_item_for_update:
+                app.logger.error(f"GET_SUMMARY: In-memory item for {scenario_hash_resp} disappeared before update lock!")
+                response_json = {"error": "Cache consistency error during summary update"}
+                raise ValueError(response_json["error"])
+
+            cached_item_for_update["reasoning_summary"] = summary_text_resp
+            cached_item_for_update["status"] = "summary_done"
+            cached_item_for_update["timestamp_summary_complete"] = pd.Timestamp.now().isoformat()
+            app.logger.info(f"IN_MEMORY_STORE: Updated data for {scenario_hash_resp} to summary_done. Store size: {len(SCENARIO_PROCESSING_STORE)}")
+
+        status_code = 200
+        response_json = {
+            "scenario_hash": scenario_hash_resp,
+            "status": "summary_done",
+            "reasoning_summary": summary_text_resp,
+        }
+        app.logger.info(f"Successfully generated summary for {scenario_hash_resp}. Status: summary_done.")
+
+    except Exception as e:
+        app.logger.error(f"Error in /api/scenario/get_reasoning_summary: {e}", exc_info=True)
+        # Default error response is already set. Specific errors update status_code and response_json.
+        if str(e) not in [ "Scenario hash not provided for summary generation",
+                            "Scenario not found in store for summary generation.",
+                            f"Scenario not ready for summary. Status: {cached_item_snapshot.get('status') if 'cached_item_snapshot' in locals() and cached_item_snapshot else 'N/A'}",
+                            "Cache consistency error during summary update"]:
+            status_code = 500 
+            response_json = {"error": "An unexpected server error occurred during summary generation"}
+
+
+    return jsonify(response_json), status_code
+
+
 @app.route("/api/scenario/finalize_and_get_result", methods=["POST"])
 def finalize_scenario_and_get_result():
     app.logger.info(
@@ -1139,7 +1276,7 @@ def finalize_scenario_and_get_result():
             app.logger.info(f"Returning fully cached result for {scenario_hash_resp} during finalize call.")
             return jsonify(cached_item_snapshot), 200
 
-        if cached_item_snapshot.get("status") != "decision_done":
+        if cached_item_snapshot.get("status") != "summary_done": # Expect summary_done now
             status_code = 400
             response_json = {"error": f"Scenario not ready for finalization. Status: {cached_item_snapshot.get('status')}"}
             raise ValueError(response_json["error"])
@@ -1150,6 +1287,7 @@ def finalize_scenario_and_get_result():
         final_decision_text = cached_item_snapshot["final_decision_text"]
         provider = cached_item_snapshot["provider"]
         final_prompt_text = cached_item_snapshot.get("final_prompt_text", "")
+        reasoning_summary = cached_item_snapshot.get("reasoning_summary", "Summary not available.") # Get the summary
         decision_classification = classify_decision(final_decision_text)
         intervention_saves_party = ("humans_and_animals" if scenario_data.get("intervention", False) else "self")
         do_nothing_saves_party = ("self" if scenario_data.get("intervention", False) else "humans_and_animals")
@@ -1168,6 +1306,7 @@ def finalize_scenario_and_get_result():
             "prompt": final_prompt_text,
             "intermediate_reasoning": intermediate_reasoning_text,
             "response": final_decision_text,
+            "reasoning_summary": reasoning_summary, # Add summary to payload
             "decision_classification": decision_classification,
             "provider": provider,
             "intervention_saves": intervention_saves_party,
@@ -1179,6 +1318,7 @@ def finalize_scenario_and_get_result():
             "self_hosted_config": cached_item_snapshot.get("self_hosted_config"),
             "timestamp_initiated": cached_item_snapshot.get("timestamp_initiated"),
             "timestamp_decision_complete": cached_item_snapshot.get("timestamp_decision_complete"),
+            "timestamp_summary_complete": cached_item_snapshot.get("timestamp_summary_complete"), # Add summary timestamp
             "timestamp_finalized": pd.Timestamp.now().isoformat(),
         }
 
