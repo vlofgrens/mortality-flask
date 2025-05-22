@@ -1030,7 +1030,7 @@ def get_scenario_decision():
             # This is a success, but not an error, so don't raise, just return directly.
             return jsonify(response_json), status_code
 
-        if cached_item_snapshot.get("status") != "reasoning_done":
+        if cached_item_snapshot.get("status") != "intermediate_summary_done": # Expect intermediate_summary_done now
             status_code = 400
             response_json = {"error": f"Scenario not ready for decision. Status: {cached_item_snapshot.get('status')}"}
             raise ValueError(response_json["error"])
@@ -1090,7 +1090,7 @@ def get_scenario_decision():
         if str(e) not in ["Scenario hash not provided", 
                            "Scenario not found in cache. Please initiate processing first.", 
                            "Processing version mismatch. Please re-initiate processing.", 
-                           f"Scenario not ready for decision. Status: {cached_item_snapshot.get('status') if 'cached_item_snapshot' in locals() and cached_item_snapshot else 'N/A'}",
+                           f"Scenario not ready for decision. Status: {cached_item_snapshot.get('status') if 'cached_item_snapshot' in locals() and cached_item_snapshot else 'N/A'}", # Updated expected status
                            f"Failed to get P2 decision from LLM: {provider if provider else 'N/A'}",
                            "Cache consistency error during decision update"]:
             status_code = 500 # Ensure it's a generic 500 for unhandled ones
