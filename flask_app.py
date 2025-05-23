@@ -1153,8 +1153,7 @@ def get_intermediate_reasoning_summary():
             intermediate_summary_text_resp = "No intermediate reasoning was available to summarize."
         else:
             summary_prompt = (
-                f"Based *only* on the following initial ethical reasoning, provide a very concise two or three-sentence summary "
-                f"of the current thought process *before* any final decision is made. Focus on the core considerations and dilemmas identified. "
+                f"Based *only* on the following initial ethical reasoning, provide a very concise two or three-sentence summary. Do no restate the situation, just summarize the reasoning process so far. This is the current thought process *before* any final decision is made. Focus on the core considerations and dilemmas identified. "
                 f"Be direct and clear.\n\nEthical Reasoning So Far:\n{intermediate_reasoning}\n\n"
                 f"Concise Summary of Current Thought Process (2-3 sentences):"
             )
@@ -1282,7 +1281,7 @@ def get_reasoning_summary():
             app.logger.warning(f"No reasoning or decision text found for {scenario_hash_resp} to summarize.")
             summary_text_resp = "No detailed reasoning was available to summarize."
         else:
-            summary_prompt = f"Based on the following ethical reasoning and decision, provide a very concise two or three-sentence summary suitable for a quick preview. Focus on the core justification for the choice made. Be direct and clear.\\n\\n"
+            summary_prompt = f"Based on the following ethical reasoning and decision, provide a very concise two or three-sentence summary suitable for a quick preview. Focus on the core justification for the choice made. Be direct and clear. Do not restate the situation, just summarize the reasoning process and why the final decision was made.\\n\\n"
             summary_prompt += f"Ethical Reasoning: {intermediate_reasoning}\\n\\n"
             if final_decision is not None:
                 summary_prompt += f"Final Decision & Justification: {final_decision}\\n\\n"
